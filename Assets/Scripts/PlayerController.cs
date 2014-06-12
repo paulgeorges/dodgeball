@@ -24,7 +24,7 @@ public class PlayerController : MonoBehaviour
 	private bool _canUpdatePlayer = true;
 	private CenterPoint _centerPoint;
 	private HitZone _hitZone;
-
+	private float _idleTime;
     // properties
 	public bool CanUpdatePlayer
 	{
@@ -162,11 +162,6 @@ public class PlayerController : MonoBehaviour
         else {
             ResetPlayer();
         }
-
-		if(Animators != null){
-			// update a random float for idle animations
-			AnimatorsSetFloat("Random", Random.Range(0f, 1f));
-		}
     }
     #endregion
 
@@ -296,11 +291,11 @@ public class PlayerController : MonoBehaviour
         // if grounded, moving and not attacking
         if ((CharacterMotor.IsGrounded() && isMoving) || !CharacterMotor.IsGrounded()) {
             // set idle time
-            AnimatorsSetFloat("IdleTime", 0f);
-        }
-        else {
+			_idleTime = 0;
+		}
+		else {
             // increase idle time
-            AnimatorsSetFloat("IdleTime", AnimatorsGetFloat("IdleTime") + Time.deltaTime);
+			_idleTime += Time.deltaTime;
         }
         
         // input jump to the character motor
@@ -323,6 +318,11 @@ public class PlayerController : MonoBehaviour
         AnimatorsSetBool("Dead", false);
         Health.postDeathInvincible = false;
     }
+
+	private void OnDodgeBallCaptured(DodgeBall dodgeBall){
+		dodgeBall.transform.parent = transform;
+		dodgeBall.transform.localPosition = Vector3.zero;
+	}
 
     #endregion
 
