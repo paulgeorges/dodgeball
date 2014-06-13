@@ -30,6 +30,14 @@ public class DodgeBall : MonoBehaviour {
 		}
 	}
 
+	private void OnTriggerExit(Collider other) {
+		if(isCaptured && other.gameObject.tag == TagNames.Player && other.gameObject == capturedBy.gameObject){
+			_sphereCollider.isTrigger = false;
+			capturedBy = null;
+			isCaptured = false;
+		}
+	}
+
 	private void OnCollisionEnter(Collision collision) {
 		if(collision.gameObject.tag == TagNames.Player && (capturedBy == null || capturedBy.gameObject != collision.gameObject)){
 			HandleCollision(collision.gameObject);
@@ -38,6 +46,7 @@ public class DodgeBall : MonoBehaviour {
 
 	private void HandleCollision(GameObject other){
 		if(!isInFlight && !isCaptured){
+			_rigidBody.velocity = Vector3.zero;
 			isCaptured = true;
 			capturedBy = other.GetComponent<Player>();
 			isInFlight = false;
@@ -47,16 +56,8 @@ public class DodgeBall : MonoBehaviour {
 	}
 
 	private void OnThrowDodgeBall(ThrowDodgeBallProperties throwDodgeBallProperties){
-		StartCoroutine(HandleThrowDodgeBall(throwDodgeBallProperties));
-	}
-
-	private IEnumerator HandleThrowDodgeBall(ThrowDodgeBallProperties throwDodgeBallProperties){
-		isCaptured = false;
-		capturedBy = null;
 		isInFlight = false;
 		transform.parent = null;
 		_rigidBody.velocity = throwDodgeBallProperties.velocity;
-		yield return new WaitForFixedUpdate();
-		_sphereCollider.isTrigger = false;
 	}
 }

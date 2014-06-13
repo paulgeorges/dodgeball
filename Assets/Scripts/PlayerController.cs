@@ -253,7 +253,7 @@ public class PlayerController : MonoBehaviour
 	private void HandleAttack(){
 		if (_dodgeBall && Input.GetButton(Player.AxisMap [AxisEnum.FIRE])) {
 			ThrowDodgeBallProperties throwDodgeBallProperties = new ThrowDodgeBallProperties();
-			throwDodgeBallProperties.velocity = moveDirection * 20;
+			throwDodgeBallProperties.velocity = aimingDirection.normalized * 20;
 			_dodgeBall.BroadcastMessage(GameMessages.THROW_DODGE_BALL, throwDodgeBallProperties);
 			_dodgeBall = null;
 		}
@@ -272,12 +272,36 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-		isMoving = Mathf.Abs(horizontalMovement) > 0.1f;
+		float verticalMovement;
+		if (useVirtualGamepad) {
+			verticalMovement = JoystickEvent.moveY;
+		}
+		else {
+			verticalMovement = Input.GetAxisRaw(Player.AxisMap [AxisEnum.VERTICAL]);
+			if (Player.AxisMap.isGamePad && verticalMovement < float.Epsilon && verticalMovement > -float.Epsilon) {
+				verticalMovement = Input.GetAxisRaw(Player.AxisMap [AxisEnum.VERTICAL_DPAD]);
+			}
+		}
 
-        if (isMoving) {
-            // move forwards in the direction we're looking
+		bool horizontalMovementApplied = Mathf.Abs (horizontalMovement) > 0.1f;
+		bool verticalMovementApplied = Mathf.Abs (verticalMovement) > 0.1f;
+
+		isMoving = horizontalMovementApplied;
+
+		if (isMoving) {
+			// move forwards in the direction we're looking
 			moveDirection = new Vector3(horizontalMovement, 0, 0);
-        }
+		}
+
+		if (horizontalMovementApplied) {
+			aimingDirection.x = Mathf.Floor(horizontalMovement * 2) / 2;
+		}
+
+		if (verticalMovementApplied) {
+			aimingDirection.y = Mathf.Floor(verticalMovement * 2) / 2;
+		} else {
+			aimingDirection.y = 0;
+		}
 
         // set our speed to the animator
         AnimatorsSetFloat("Speed", Mathf.Abs(horizontalMovement));

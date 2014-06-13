@@ -117,8 +117,9 @@ public class CharacterMotor : MonoBehaviour
     {
         public bool enabled = true;
         public MovementTransferOnJump movementTransfer = MovementTransferOnJump.PermaTransfer;
+		public LayerMask movingPlatformLayer;
+
         [System.NonSerialized]
-        
         public Transform hitPlatform;
         
         [System.NonSerialized]
@@ -279,9 +280,11 @@ public class CharacterMotor : MonoBehaviour
                 groundNormal = lastGroundNormal;
             }
             
-            movingPlatform.hitPlatform = hit.collider.transform;
-            movement.hitPoint = hit.point;
-            movement.frameVelocity = Vector3.zero;
+			if(movingPlatform.movingPlatformLayer.IsLayerInLayerMask(hit.collider.gameObject.layer)){
+				movingPlatform.hitPlatform = hit.collider.transform;
+				movement.hitPoint = hit.point;
+				movement.frameVelocity = Vector3.zero;
+			}
         }
     }
 
