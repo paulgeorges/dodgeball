@@ -25,6 +25,8 @@ public class PlayerController : MonoBehaviour
 	private CenterPoint _centerPoint;
 	private HitZone _hitZone;
 	private float _idleTime;
+	private DodgeBall _dodgeBall;
+
     // properties
 	public bool CanUpdatePlayer
 	{
@@ -249,7 +251,12 @@ public class PlayerController : MonoBehaviour
     }
 
 	private void HandleAttack(){
-
+		if (_dodgeBall && Input.GetButton(Player.AxisMap [AxisEnum.FIRE])) {
+			ThrowDodgeBallProperties throwDodgeBallProperties = new ThrowDodgeBallProperties();
+			throwDodgeBallProperties.velocity = moveDirection * 20;
+			_dodgeBall.BroadcastMessage(GameMessages.THROW_DODGE_BALL, throwDodgeBallProperties);
+			_dodgeBall = null;
+		}
 	}
 
     private void HandlePlayerMovement()
@@ -319,14 +326,16 @@ public class PlayerController : MonoBehaviour
         Health.postDeathInvincible = false;
     }
 
-	private void OnDodgeBallCaptured(DodgeBall dodgeBall){
-		dodgeBall.transform.parent = transform;
-		dodgeBall.transform.localPosition = Vector3.zero;
-	}
-
     #endregion
 
     #region Message Receivers
+	
+	private void OnDodgeBallCaptured(DodgeBall dodgeBall){
+		_dodgeBall = dodgeBall;
+		_dodgeBall.transform.parent = transform;
+		_dodgeBall.transform.localPosition = Vector3.zero;
+	}
+
     private void OnAnimatorIK(int layerIndex)
     {
         if (!_canUpdatePlayer) {
