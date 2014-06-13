@@ -230,7 +230,7 @@ public class PlayerController : MonoBehaviour
             }
 
             if (horizontalAim != 0 || verticalAim != 0) {
-				aimingDirection = new Vector3(horizontalAim, verticalAim, 0);
+				aimingDirection = new Vector3(Mathf.Floor(horizontalAim * 2) / 2, Mathf.Floor(verticalAim * 2) / 2, 0);
             }
         }
         // if the axis map is not setup for a gamepad (mouse aiming)
