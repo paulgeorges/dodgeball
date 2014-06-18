@@ -23,6 +23,7 @@ public class GameMessages
 	public const string BULLET_HIT = "OnBulletHit";
 
 	// dodge ball related
+	public const string DODGE_BALL_HIT = "OnDodgeBallHit";
 	public const string DODGE_BALL_CAPTURED = "OnDodgeBallCaptured";
 	public const string THROW_DODGE_BALL = "OnThrowDodgeBall";
 

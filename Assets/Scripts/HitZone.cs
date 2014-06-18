@@ -2,14 +2,21 @@
 using System.Collections;
 
 public class HitZone : MonoBehaviour {
+	private BoxCollider _boxCollider;
+	private bool _active = false;
 
-	// Use this for initialization
-	void Start () {
-	
+	public Player owner;
+
+	private void Awake(){
+		_boxCollider = GetComponent<BoxCollider>();
+
+		if(!owner){
+			gameObject.GetComponentInParent<Player>();
+		}
 	}
 	
-	// Update is called once per frame
-	void Update () {
-	
+	public void SetActive(bool value){
+		_active = value;
+		_boxCollider.enabled = value;
 	}
 }

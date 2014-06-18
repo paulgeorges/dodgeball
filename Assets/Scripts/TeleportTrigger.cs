@@ -19,12 +19,14 @@ public class TeleportTrigger : MonoBehaviour {
 					parent = parent.parent;
 				}
 
+				Vector3 dist = transform.position - other.transform.position;
+
 				TeleportTrigger otherTeleportTrigger = teleportPoint.GetComponent<TeleportTrigger>();
 				if(otherTeleportTrigger){
 					otherTeleportTrigger.active = false;
 				}
 
-				other.transform.position = teleportPoint.position;
+				other.transform.position = teleportPoint.position - dist;
 			}
 		}
 	}

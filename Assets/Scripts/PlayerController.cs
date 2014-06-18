@@ -18,6 +18,9 @@ public class PlayerController : MonoBehaviour
 	public float verticalAim;
 	public bool horizontalAimApplied;
 	public bool verticalAimApplied;
+	public float preWaitTime = 0.1f;
+	public float captureTime = 0.1f;
+	public float postWaitTime = 0.3f;
 
     // private
 	private Player _player;
@@ -33,6 +36,7 @@ public class PlayerController : MonoBehaviour
 	private float _idleTime;
 	private DodgeBall _dodgeBall;
 	private bool _receiving = false;
+	private DodgeBallAttachPoint _dodgeBallAttachPoint;
 
     // properties
 	public bool CanUpdatePlayer
@@ -145,6 +149,17 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
+	private DodgeBallAttachPoint DodgeBallAttachPoint
+	{
+		get {
+			if (_dodgeBallAttachPoint == null) {
+				_dodgeBallAttachPoint = GetComponentInChildren<DodgeBallAttachPoint>();
+			}
+			
+			return _dodgeBallAttachPoint;
+		}
+	}
+	
 	#endregion
 	
 	#region Unity Callbacks
@@ -235,13 +250,13 @@ public class PlayerController : MonoBehaviour
     }
 
 	private void HandleAttack(){
-		if(Input.GetButton(Player.AxisMap [AxisEnum.FIRE])){
+		if(Input.GetButtonDown(Player.AxisMap [AxisEnum.FIRE])){
 			if (_dodgeBall) {
 				ThrowDodgeBallProperties throwDodgeBallProperties = new ThrowDodgeBallProperties();
 				throwDodgeBallProperties.velocity = aimingDirection.normalized * 20;
 				_dodgeBall.BroadcastMessage(GameMessages.THROW_DODGE_BALL, throwDodgeBallProperties);
 				_dodgeBall = null;
-			}else{
+			}else if(!_receiving){
 				StartCoroutine(HandleReceive());
 			}
 		}
@@ -249,7 +264,11 @@ public class PlayerController : MonoBehaviour
 	
 	private IEnumerator HandleReceive(){
 		_receiving = true;
-		yield return new WaitForEndOfFrame();
+		yield return new WaitForSeconds(preWaitTime);
+		_hitZone.SetActive(true);
+		yield return new WaitForSeconds(captureTime);
+		_hitZone.SetActive(false);
+		yield return new WaitForSeconds(postWaitTime);
 		_receiving = false;
 	}
 
@@ -375,9 +394,24 @@ public class PlayerController : MonoBehaviour
     #region Message Receivers
 	
 	private void OnDodgeBallCaptured(DodgeBall dodgeBall){
+		if(_receiving){
+			StopCoroutine(HandleReceive());
+			_receiving = false;
+		}
+
 		_dodgeBall = dodgeBall;
-		_dodgeBall.transform.parent = transform;
+
+		if(DodgeBallAttachPoint){
+			_dodgeBall.transform.parent = DodgeBallAttachPoint.transform;
+		}else{
+			_dodgeBall.transform.parent = transform;
+		}
+
 		_dodgeBall.transform.localPosition = Vector3.zero;
+	}
+
+	private void OnDodgeBallHit(DodgeBall dodgeBall){
+		Messenger<Player>.Invoke(GameMessages.RESET_PLAYER, _player);
 	}
 
     private void OnAnimatorIK(int layerIndex)

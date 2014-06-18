@@ -105,17 +105,10 @@ public class PlayerManager : MonoBehaviour
         if (playerObject != null) {
             Player player = playerObject.GetComponent<Player>();
             player.transform.parent = transform;
-
-			if(PlayerSpawnPoints.Count > 0){
-				PlayerSpawnPoint playerSpawnPoint = PlayerSpawnPoints[Random.Range(0, PlayerSpawnPoints.Count)];
-				player.transform.position = playerSpawnPoint.transform.position;
-				player.transform.rotation = Quaternion.LookRotation(playerSpawnPoint.transform.forward);
-			}
-
             player.SetId(players.Count);
             player.AxisMap = axisMapToUse;
             players.Add(player);
-
+			OnResetPlayer(player);
             return player;
         }
 
@@ -125,6 +118,12 @@ public class PlayerManager : MonoBehaviour
     private void OnResetPlayer(Player player)
     {    
         if (player.playerLocation == PlayerLocationEnum.LOCAL) {
+			if(PlayerSpawnPoints.Count > 0){
+				PlayerSpawnPoint playerSpawnPoint = PlayerSpawnPoints[Random.Range(0, PlayerSpawnPoints.Count)];
+				player.transform.position = playerSpawnPoint.transform.position;
+				player.transform.rotation = Quaternion.LookRotation(playerSpawnPoint.transform.forward);
+			}
+
             player.Health.Reset();
         }
     }

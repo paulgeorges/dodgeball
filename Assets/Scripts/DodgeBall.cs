@@ -8,6 +8,7 @@ public class ThrowDodgeBallProperties{
 public class DodgeBall : MonoBehaviour {
 	private SphereCollider _sphereCollider;
 	private Rigidbody _rigidBody;
+	private GameObject _dodgeBallManager;
 
 	public bool isCaptured = false;
 	public Player capturedBy;
@@ -16,6 +17,8 @@ public class DodgeBall : MonoBehaviour {
 	private void Awake(){
 		_rigidBody = GetComponent<Rigidbody>();
 		_sphereCollider = GetComponent<SphereCollider>();
+		_dodgeBallManager = GameObject.FindGameObjectWithTag(TagNames.DodgeBallManager);
+		transform.parent = _dodgeBallManager.transform;
 		Reset();
 	}
 
@@ -25,9 +28,11 @@ public class DodgeBall : MonoBehaviour {
 	}
 
 	private void OnTriggerEnter(Collider other) {
-		if(other.gameObject.tag == TagNames.Player && (capturedBy == null || capturedBy.gameObject != other.gameObject)){
-			HandleCollision(other.gameObject);
-		}
+		HandleCollision(other.gameObject);
+	}
+
+	private void OnCollisionEnter(Collision collision) {
+		HandleCollision(collision.gameObject);
 	}
 
 	private void OnTriggerExit(Collider other) {
@@ -37,18 +42,41 @@ public class DodgeBall : MonoBehaviour {
 			isCaptured = false;
 		}
 	}
-
-	private void OnCollisionEnter(Collision collision) {
-		if(collision.gameObject.tag == TagNames.Player && (capturedBy == null || capturedBy.gameObject != collision.gameObject)){
-			HandleCollision(collision.gameObject);
+	
+	private void HandleCollision(GameObject other){
+		if(other.tag == TagNames.Player){
+			if(!isCaptured && !isInFlight && !capturedBy){
+				HandleCapture(other);
+			}else if(isInFlight && other != capturedBy){
+				HandleHit(other);
+			}
+		}else if(other.tag == TagNames.HitZone){
+			HandleCapture(other);
 		}
 	}
 
-	private void HandleCollision(GameObject other){
-		if(!isInFlight && !isCaptured){
+	private void HandleHit(GameObject other){
+		_rigidBody.velocity = Vector3.zero;
+		isCaptured = false;
+		capturedBy = null;
+		isInFlight = false;
+		_sphereCollider.isTrigger = true;
+		other.SendMessage(GameMessages.DODGE_BALL_HIT, this);
+	}
+
+	private void HandleCapture(GameObject other){
+		Player player = null;
+		HitZone hitZone = other.GetComponent<HitZone>();
+		if(hitZone && hitZone.owner){
+			player = hitZone.owner;
+		}else{
+			player = other.GetComponent<Player>();
+		}
+
+		if(player){
 			_rigidBody.velocity = Vector3.zero;
 			isCaptured = true;
-			capturedBy = other.GetComponent<Player>();
+			capturedBy = player;
 			isInFlight = false;
 			_sphereCollider.isTrigger = true;
 			capturedBy.SendMessage(GameMessages.DODGE_BALL_CAPTURED, this);
@@ -56,8 +84,8 @@ public class DodgeBall : MonoBehaviour {
 	}
 
 	private void OnThrowDodgeBall(ThrowDodgeBallProperties throwDodgeBallProperties){
-		isInFlight = false;
-		transform.parent = null;
+		isInFlight = true;
+		transform.parent = _dodgeBallManager.transform;
 		_rigidBody.velocity = throwDodgeBallProperties.velocity;
 	}
 }
