@@ -12,6 +12,12 @@ public class PlayerController : MonoBehaviour
 	public bool isMoving = false;
     public Vector3 moveDirection = Vector3.right;
 	public Vector3 aimingDirection = Vector3.right;
+	public float horizontalMovement;
+	public float verticalMovement;
+	public float horizontalAim;
+	public float verticalAim;
+	public bool horizontalAimApplied;
+	public bool verticalAimApplied;
 
     // private
 	private Player _player;
@@ -26,6 +32,7 @@ public class PlayerController : MonoBehaviour
 	private HitZone _hitZone;
 	private float _idleTime;
 	private DodgeBall _dodgeBall;
+	private bool _receiving = false;
 
     // properties
 	public bool CanUpdatePlayer
@@ -213,25 +220,7 @@ public class PlayerController : MonoBehaviour
     {
         // if playing on a gamepad
         if (Player.AxisMap.isGamePad) {
-            float horizontalAim = 0.0f;
-            if (useVirtualGamepad) {
-                horizontalAim = JoystickEvent.aimX;
-            }
-            else {
-                horizontalAim = Input.GetAxisRaw(Player.AxisMap [AxisEnum.AIM_HORIZONTAL]);
-            }
-            
-            float verticalAim = 0.0f;
-            if (useVirtualGamepad) {
-                verticalAim = JoystickEvent.aimY;
-            }
-            else {
-                verticalAim = Input.GetAxisRaw(Player.AxisMap [AxisEnum.AIM_VERTICAL]);
-            }
 
-            if (horizontalAim != 0 || verticalAim != 0) {
-				aimingDirection = new Vector3(Mathf.Floor(horizontalAim * 2) / 2, Mathf.Floor(verticalAim * 2) / 2, 0);
-            }
         }
         // if the axis map is not setup for a gamepad (mouse aiming)
         else {
@@ -243,25 +232,29 @@ public class PlayerController : MonoBehaviour
                 aimingDirection = (mousePosition - positionOnScreen).normalized;
             }
         }
-
-		if(HitZone){
-			HitZone.transform.rotation = Quaternion.LookRotation(aimingDirection);
-			HitZone.transform.localPosition = new Vector3(0, aimingDirection.y, aimingDirection.x);
-		}
     }
 
 	private void HandleAttack(){
-		if (_dodgeBall && Input.GetButton(Player.AxisMap [AxisEnum.FIRE])) {
-			ThrowDodgeBallProperties throwDodgeBallProperties = new ThrowDodgeBallProperties();
-			throwDodgeBallProperties.velocity = aimingDirection.normalized * 20;
-			_dodgeBall.BroadcastMessage(GameMessages.THROW_DODGE_BALL, throwDodgeBallProperties);
-			_dodgeBall = null;
+		if(Input.GetButton(Player.AxisMap [AxisEnum.FIRE])){
+			if (_dodgeBall) {
+				ThrowDodgeBallProperties throwDodgeBallProperties = new ThrowDodgeBallProperties();
+				throwDodgeBallProperties.velocity = aimingDirection.normalized * 20;
+				_dodgeBall.BroadcastMessage(GameMessages.THROW_DODGE_BALL, throwDodgeBallProperties);
+				_dodgeBall = null;
+			}else{
+				StartCoroutine(HandleReceive());
+			}
 		}
+	}
+	
+	private IEnumerator HandleReceive(){
+		_receiving = true;
+		yield return new WaitForEndOfFrame();
+		_receiving = false;
 	}
 
     private void HandlePlayerMovement()
     {
-        float horizontalMovement;
         if (useVirtualGamepad) {
             horizontalMovement = JoystickEvent.moveX;
         }
@@ -272,7 +265,6 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-		float verticalMovement;
 		if (useVirtualGamepad) {
 			verticalMovement = JoystickEvent.moveY;
 		}
@@ -283,24 +275,52 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
-		bool horizontalMovementApplied = Mathf.Abs (horizontalMovement) > 0.1f;
-		bool verticalMovementApplied = Mathf.Abs (verticalMovement) > 0.1f;
-
-		isMoving = horizontalMovementApplied;
+		isMoving = Mathf.Abs(horizontalMovement) >= 0.1f;
 
 		if (isMoving) {
 			// move forwards in the direction we're looking
 			moveDirection = new Vector3(horizontalMovement, 0, 0);
 		}
 
-		if (horizontalMovementApplied) {
-			aimingDirection.x = Mathf.Floor(horizontalMovement * 2) / 2;
+		horizontalAim = Mathf.RoundToInt(horizontalMovement);
+		verticalAim = Mathf.RoundToInt(verticalMovement);
+
+		horizontalAimApplied = Mathf.Abs(horizontalAim) == 1;
+		verticalAimApplied = Mathf.Abs(verticalAim) == 1;
+
+		if(!horizontalAimApplied && !verticalAimApplied){
+			if(moveDirection.x > 0){
+				aimingDirection.x = 1;
+				aimingDirection.y = 0;
+			}else{
+				aimingDirection.x = -1;
+				aimingDirection.y = 0;
+			}
+		}else{
+			if (horizontalAimApplied) {
+				if(verticalAimApplied){
+					aimingDirection.x = horizontalAim / 2;
+				}else{
+					aimingDirection.x = horizontalAim;
+				}
+			}else{
+				aimingDirection.x = 0;
+			}
+			
+			if (verticalAimApplied) {
+				if(horizontalAimApplied){
+					aimingDirection.y = verticalAim / 2;
+				}else{
+					aimingDirection.y = verticalAim;
+				}
+			}else{
+				aimingDirection.y = 0;
+			}
 		}
 
-		if (verticalMovementApplied) {
-			aimingDirection.y = Mathf.Floor(verticalMovement * 2) / 2;
-		} else {
-			aimingDirection.y = 0;
+		if(HitZone){
+			HitZone.transform.rotation = Quaternion.LookRotation(aimingDirection);
+			HitZone.transform.localPosition = new Vector3(0, aimingDirection.y, aimingDirection.x);
 		}
 
         // set our speed to the animator
