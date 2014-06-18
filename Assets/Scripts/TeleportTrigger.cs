@@ -2,29 +2,34 @@
 using System.Collections;
 
 public class TeleportTrigger : MonoBehaviour {
-
+	public LayerMask mask;
 	public Transform teleportPoint;
+	public bool active = true;
 
 	private void OnTriggerEnter (Collider other)
 	{
-		PlayerController playerController = other.GetComponent<PlayerController>();
-		if(playerController){
-			playerController.transform.position = teleportPoint.position;
-			playerController.transform.rotation = teleportPoint.rotation;
+		if(active && teleportPoint){
+			if(mask.IsLayerInLayerMask(other.gameObject.layer)){
+				Transform parent = other.transform.parent;
+				while(parent != null){
+					if(mask.IsLayerInLayerMask(parent.gameObject.layer)){
+						return;
+					}
 
-			CharacterMotor characterMotor = other.GetComponent<CharacterMotor>();
-			characterMotor.movement.lockXAxis = false;
-			characterMotor.movement.lockZAxis = false;
-			
-			if(teleportPoint.forward.x >= 1){
-				characterMotor.movement.lockZAxis = true;
-				characterMotor.movement.lockZAxisValue = characterMotor.transform.position.z;
-			}
-			
-			if(teleportPoint.forward.z >= 1){
-				characterMotor.movement.lockXAxis = true;
-				characterMotor.movement.lockXAxisValue = characterMotor.transform.position.x;
+					parent = parent.parent;
+				}
+
+				TeleportTrigger otherTeleportTrigger = teleportPoint.GetComponent<TeleportTrigger>();
+				if(otherTeleportTrigger){
+					otherTeleportTrigger.active = false;
+				}
+
+				other.transform.position = teleportPoint.position;
 			}
 		}
+	}
+
+	private void OnTriggerExit(Collider other){
+		active = true;
 	}
 }
