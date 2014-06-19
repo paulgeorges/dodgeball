@@ -6,9 +6,10 @@ public class PlayerManager : MonoBehaviour
 {
     public GameObject playerPrefab;
     public List<Player> players = new List<Player>();
+
     private List<PlayerSpawnPoint> _playerSpawnPoints = new List<PlayerSpawnPoint>();
     private bool paused = false;
-
+	private GameObject _playerCreationPoint;
 	private static PlayerManager _instance;
 	
 	public static PlayerManager Instance
@@ -31,6 +32,8 @@ public class PlayerManager : MonoBehaviour
         if (!playerPrefab) {
             playerPrefab = (GameObject)Resources.Load("Player");
         }
+
+		_playerCreationPoint = GameObject.FindGameObjectWithTag(TagNames.PlayerCreationPoint);
     }
 
 	private void Update(){
@@ -96,10 +99,18 @@ public class PlayerManager : MonoBehaviour
         GameObject playerObject;
         
         if (uLink.Network.peerType == uLink.NetworkPeerType.Disconnected) {
-            playerObject = (GameObject)Instantiate(playerPrefab);
+			if(_playerCreationPoint){
+				playerObject = (GameObject)Instantiate(playerPrefab, _playerCreationPoint.transform.position, _playerCreationPoint.transform.rotation);
+			}else{
+				playerObject = (GameObject)Instantiate(playerPrefab, transform.position, transform.rotation);
+			} 
         }
         else {
-            playerObject = (GameObject)uLink.Network.Instantiate(playerPrefab, transform.position, transform.rotation, 0);
+			if(_playerCreationPoint){
+				playerObject = (GameObject)uLink.Network.Instantiate(playerPrefab, _playerCreationPoint.transform.position, _playerCreationPoint.transform.rotation, 0);
+			}else{
+				playerObject = (GameObject)uLink.Network.Instantiate(playerPrefab, transform.position, transform.rotation, 0);
+			}    
         }
         
         if (playerObject != null) {

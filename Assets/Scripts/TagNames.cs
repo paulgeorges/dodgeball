@@ -9,4 +9,5 @@ public class TagNames : MonoBehaviour {
 	public static string DodgeBall = "DodgeBall";
 	public static string DodgeBallManager = "DodgeBallManager";
 	public static string HitZone = "HitZone";
+	public static string PlayerCreationPoint = "PlayerCreationPoint";
 }
